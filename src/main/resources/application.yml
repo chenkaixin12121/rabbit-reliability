@@ -1,0 +1,10 @@
+spring:
+  profiles:
+    active: dev
+  mail:
+    host: smtp.163.com
+    username: springboot_demo@163.com
+    password: LXSHSTUVMPOBQXYH
+mail:
+  # 发邮件者
+  from: springboot_demo@163.com

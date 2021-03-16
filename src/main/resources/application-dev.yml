@@ -14,16 +14,18 @@ spring:
     port: 5672
     # 发送者开启 confirm 确认机制
     publisher-confirm-type: correlated
-    # 发送者开启 return 确认机制
+    # 发送者开启 return 确认机制，要和 mandatory 一起使用
     publisher-returns: true
+    template:
+      mandatory: true
     listener:
       simple:
-        # 设置消费端手动 ack
+        # 设置消费端需要手动 ack,默认为 auto
         acknowledge-mode: manual
         # 一次处理的消息数量
         prefetch: 2
         # 消费端最大并发数
-        max-concurrency: 5
+        max-concurrency: 10
   redis:
     host: localhost
     port: 6379

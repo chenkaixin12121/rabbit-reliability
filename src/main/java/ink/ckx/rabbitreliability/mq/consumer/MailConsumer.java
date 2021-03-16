@@ -59,7 +59,7 @@ public class MailConsumer {
             // redis中包含该key,说明此消息已经被消费过
             log.info("消息已经被消费, msgId: {}", msgId);
             // 确认消息已消费
-            channel.basicAck(tag, true);
+            channel.basicAck(tag, false);
             return;
         }
 

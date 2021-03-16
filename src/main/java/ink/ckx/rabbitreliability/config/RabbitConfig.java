@@ -54,6 +54,11 @@ public class RabbitConfig {
         RabbitTemplate rabbitTemplate = new RabbitTemplate(cachingConnectionFactory);
         rabbitTemplate.setMessageConverter(converter());
 
+        /**
+         * correlationData 唯一标识
+         * ack 消息是否到达
+         * cause 失败的异常消息
+         */
         rabbitTemplate.setConfirmCallback((correlationData, ack, cause) -> {
             String msgId = Objects.requireNonNull(correlationData).getId();
             if (ack) {

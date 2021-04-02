@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import ink.ckx.rabbitreliability.entity.MsgLog;
 import ink.ckx.rabbitreliability.mapper.MsgLogMapper;
 import ink.ckx.rabbitreliability.service.IMsgLogService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -20,21 +21,18 @@ import static ink.ckx.rabbitreliability.config.RabbitConfig.MSG_TIMEOUT;
  * @author chenkaixin
  * @since 2020-09-24
  */
+@RequiredArgsConstructor
 @Service
 public class MsgLogServiceImpl extends ServiceImpl<MsgLogMapper, MsgLog> implements IMsgLogService {
 
     private final MsgLogMapper msgLogMapper;
 
-    public MsgLogServiceImpl(MsgLogMapper msgLogMapper) {
-        this.msgLogMapper = msgLogMapper;
-    }
-
     @Override
     public void updateStatus(String msgId, Integer status) {
-        MsgLog msgLog = MsgLog.builder().
-                msgId(msgId).
-                status(status).
-                updateTime(LocalDateTime.now()).build();
+        MsgLog msgLog = MsgLog.builder()
+                .msgId(msgId)
+                .status(status)
+                .build();
         msgLogMapper.updateStatus(msgLog);
     }
 
@@ -46,8 +44,10 @@ public class MsgLogServiceImpl extends ServiceImpl<MsgLogMapper, MsgLog> impleme
     @Override
     public void updateTryCount(String msgId, LocalDateTime tryTime) {
         LocalDateTime nextTryTime = tryTime.plusMinutes(MSG_TIMEOUT);
-        MsgLog msgLog = MsgLog.builder().msgId(msgId).nextTryTime(nextTryTime).build();
-
+        MsgLog msgLog = MsgLog.builder()
+                .msgId(msgId)
+                .nextTryTime(nextTryTime)
+                .build();
         msgLogMapper.updateTryCount(msgLog);
     }
 }

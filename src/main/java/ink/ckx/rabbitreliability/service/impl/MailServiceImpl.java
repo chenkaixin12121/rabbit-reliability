@@ -2,6 +2,7 @@ package ink.ckx.rabbitreliability.service.impl;
 
 import ink.ckx.rabbitreliability.entity.Mail;
 import ink.ckx.rabbitreliability.service.MailService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
@@ -19,6 +20,7 @@ import java.io.File;
  * @description
  * @date 2020/09/14 下午 3:54
  */
+@RequiredArgsConstructor
 @Slf4j
 @Service
 public class MailServiceImpl implements MailService {
@@ -28,20 +30,18 @@ public class MailServiceImpl implements MailService {
     @Value("${mail.from}")
     private String from;
 
-    public MailServiceImpl(JavaMailSender mailSender) {
-        this.mailSender = mailSender;
-    }
-
     /**
      * 发送简单邮件
      */
     @Override
     public void send(Mail mail) {
+
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom(from);
         message.setTo(mail.getTo()); // 目标邮箱
         message.setSubject(mail.getTitle()); // 邮件标题
         message.setText(mail.getContent());  // 邮件正文
+        message.setCc(from);
 
 //        int i = 1 / 0;
         mailSender.send(message);
@@ -52,6 +52,7 @@ public class MailServiceImpl implements MailService {
      */
     @Override
     public void sendAttachment(Mail mail, File file) throws MessagingException {
+
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true);
         helper.setFrom(from);

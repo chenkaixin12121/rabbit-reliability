@@ -30,7 +30,9 @@ import java.time.format.DateTimeFormatter;
 public class JsonUtil {
 
     public static final String STANDARD_PATTERN = "yyyy-MM-dd HH:mm:ss";
+
     public static final String DATE_PATTERN = "yyyy-MM-dd";
+
     public static final String TIME_PATTERN = "HH:mm:ss";
 
     private static final ObjectMapper objectMapper = new ObjectMapper();

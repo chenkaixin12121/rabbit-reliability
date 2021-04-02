@@ -6,10 +6,11 @@ import ink.ckx.rabbitreliability.entity.Mail;
 import ink.ckx.rabbitreliability.service.IMsgLogService;
 import ink.ckx.rabbitreliability.service.MailService;
 import ink.ckx.rabbitreliability.util.JsonUtil;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageProperties;
-import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.amqp.rabbit.annotation.*;
 import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -19,6 +20,8 @@ import java.io.IOException;
 import java.util.Map;
 
 import static ink.ckx.rabbitreliability.config.RabbitConfig.*;
+import static ink.ckx.rabbitreliability.enums.MsgStatusEnum.MSG_CONSUME_FAIL;
+import static ink.ckx.rabbitreliability.enums.MsgStatusEnum.MSG_CONSUME_SUCCESS;
 
 
 /**
@@ -26,6 +29,7 @@ import static ink.ckx.rabbitreliability.config.RabbitConfig.*;
  * @description
  * @date 2020/09/24 下午 1:58
  */
+@RequiredArgsConstructor
 @Slf4j
 @Component
 public class MailConsumer {
@@ -38,14 +42,14 @@ public class MailConsumer {
 
     private final RabbitTemplate rabbitTemplate;
 
-    public MailConsumer(StringRedisTemplate redisTemplate, MailService mailService, IMsgLogService msgLogService, RabbitTemplate rabbitTemplate) {
-        this.redisTemplate = redisTemplate;
-        this.mailService = mailService;
-        this.msgLogService = msgLogService;
-        this.rabbitTemplate = rabbitTemplate;
-    }
-
-    @RabbitListener(queues = MAIL_QUEUE_NAME)
+    @RabbitListener(bindings = @QueueBinding(
+            value = @Queue(name = MAIL_QUEUE_NAME, durable = "true"),
+            exchange = @Exchange(name = MAIL_EXCHANGE_NAME,
+                    type = "x-delayed-message",
+                    arguments = @Argument(name = "x-delayed-type", value = "direct")
+                    , ignoreDeclarationExceptions = "true"),
+            key = {MAIL_ROUTING_KEY_NAME}
+    ))
     public void handler(Message message, Channel channel) throws IOException {
         Mail mail = JsonUtil.fromJson(new String(message.getBody()), new TypeReference<Mail>() {
         });
@@ -64,23 +68,24 @@ public class MailConsumer {
         }
 
         try {
-            // 发送邮件
-            mailService.send(mail);
-            msgLogService.updateStatus(msgId, MSG_CONSUMED_SUCCESS);
-            redisTemplate.opsForSet().add(ORDER_MSG_LOG, msgId);
-            channel.basicAck(tag, false);
+//            mailService.send(mail); // 发送邮件
+            int i = 1 / 0;
+            msgLogService.updateStatus(msgId, MSG_CONSUME_SUCCESS.type); // 更新为消费成功
+            redisTemplate.opsForSet().add(ORDER_MSG_LOG, msgId); // 避免重复消费
+            channel.basicAck(tag, false); // 手动ack
             log.info("发送邮件成功，msgId: {}", msgId);
         } catch (Exception e) {
             channel.basicNack(tag, false, false);
             if (retryCount < MAX_TRY_COUNT) {
                 // 发送到延迟队列
                 retryCount += 1;
-                messageProperties.setHeader(RETRY_HEADER, retryCount);
-                rabbitTemplate.send(RETRY_EXCHANGE_NAME, RETRY_ROUTING_KEY_NAME, message, new CorrelationData(msgId));
+                messageProperties.setHeader(RETRY_HEADER, retryCount); // 重试次数
+                messageProperties.setDelay(retryCount * MAIL_DELAY); // 延时时间 1m 2m 3m
                 log.info("发送邮件失败，进入第{}次重试，msgId: {}", retryCount, msgId);
+                rabbitTemplate.convertAndSend(MAIL_EXCHANGE_NAME, MAIL_ROUTING_KEY_NAME, message, new CorrelationData(msgId));
             } else {
-                msgLogService.updateStatus(msgId, MSG_CONSUMED_FAIL);
                 log.info("发送邮件失败，达到最大重试次数，msgId: {}", msgId);
+                msgLogService.updateStatus(msgId, MSG_CONSUME_FAIL.type);
             }
         }
     }

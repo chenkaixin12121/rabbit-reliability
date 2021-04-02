@@ -4,6 +4,7 @@ import ink.ckx.rabbitreliability.entity.Mail;
 import ink.ckx.rabbitreliability.entity.MsgLog;
 import ink.ckx.rabbitreliability.mapper.MsgLogMapper;
 import ink.ckx.rabbitreliability.util.JsonUtil;
+import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageBuilder;
 import org.springframework.amqp.core.MessageDeliveryMode;
@@ -24,17 +25,13 @@ import static ink.ckx.rabbitreliability.config.RabbitConfig.*;
  * @description
  * @date 2020/09/26 下午 12:51
  */
+@RequiredArgsConstructor
 @Component
 public class MailProducer {
 
     private final MsgLogMapper msgLogMapper;
 
     private final RabbitTemplate rabbitTemplate;
-
-    public MailProducer(MsgLogMapper msgLogMapper, RabbitTemplate rabbitTemplate) {
-        this.msgLogMapper = msgLogMapper;
-        this.rabbitTemplate = rabbitTemplate;
-    }
 
     public void send(Mail mail) {
 

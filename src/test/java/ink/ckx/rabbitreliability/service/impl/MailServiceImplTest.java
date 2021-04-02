@@ -10,7 +10,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import java.io.File;
 import java.util.concurrent.ThreadLocalRandom;
 
-
 @SpringBootTest
 class MailServiceImplTest {
 
